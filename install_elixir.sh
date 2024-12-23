@@ -3,14 +3,15 @@ git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.10.0
 echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.bashrc
 source ~/.bashrc
 
+bash /install_erlang.sh
 # Install Erlang plugin
-asdf plugin-add erlang
+#asdf plugin-add erlang
 
 # Install a compatible version of Erlang for Elixir 1.15
-asdf install erlang 27.0.1
+#asdf install erlang 27.0.1
 
 # Set the installed Erlang version as the global version
-asdf global erlang 27.0.1
+#asdf global erlang 27.0.1
 
 # Install Elixir plugin
 asdf plugin-add elixir

@@ -100,8 +100,10 @@ RUN GH_RUNNER_VERSION=${GH_RUNNER_VERSION:-$(curl --silent "https://api.github.c
     && apt-get clean
 
 COPY install_elixir.sh /install_elixir.sh
+COPY install_erlang.sh /install_erlang.sh
 RUN bash /install_elixir.sh
 RUN rm /install_elixir.sh
+RUN rm /install_erlang.sh
 
 RUN sed -i -e 's/# C.UTF-8 UTF-8/C.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
