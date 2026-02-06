@@ -1,4 +1,4 @@
-ARG FROM=debian:buster-slim
+ARG FROM=debian:bookworm-slim
 FROM ${FROM}
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -18,18 +18,6 @@ ENV AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# Labels.
-LABEL maintainer="me@tcardonne.fr" \
-    org.label-schema.schema-version="1.0" \
-    org.label-schema.build-date=$BUILD_DATE \
-    org.label-schema.vcs-ref=$VCS_REF \
-    org.label-schema.name="tcardonne/github-runner" \
-    org.label-schema.description="Dockerized GitHub Actions runner." \
-    org.label-schema.url="https://github.com/tcardonne/docker-github-runner" \
-    org.label-schema.vcs-url="https://github.com/tcardonne/docker-github-runner" \
-    org.label-schema.vendor="Thomas Cardonne" \
-    org.label-schema.docker.cmd="docker run -it tcardonne/github-runner:latest"
-
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get install -y \
         curl \
@@ -44,16 +32,20 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         build-essential \
         zlib1g-dev \
         gettext \
-        liblttng-ust0 \
+        liblttng-ust1 \
         libcurl4-openssl-dev \
         openssh-server \
         openssh-client \
-        curl \
+        libssl-dev \
         git \
         libncurses-dev \
-        npm \
-        locales \
-        nodejs && \
+        locales && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
+
+# Install Node.js 22
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 

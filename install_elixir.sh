@@ -7,20 +7,16 @@ source ~/.bashrc
 asdf plugin-add erlang
 
 # Install a compatible version of Erlang for Elixir 1.15
-asdf install erlang 27.2
+asdf install erlang 28.2
 
 # Set the installed Erlang version as the global version
-asdf global erlang 27.2
+asdf global erlang 28.2
 
-# Install Elixir plugin
 asdf plugin-add elixir
 
-# Install Elixir 1.15
-asdf install elixir 1.18.0-otp-27
+asdf install elixir 1.19-otp-28
 
-# Set Elixir 1.15 as the global version
-
-asdf global elixir 1.18.0-otp-27
+asdf global elixir 1.19-otp-28
 
 ln -s /root/.asdf/shims/iex /usr/bin/iex
 ln -s /root/.asdf/shims/erl /usr/bin/erl
