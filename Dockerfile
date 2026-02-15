@@ -62,6 +62,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN git config --global user.email "brock@sam.son"
 RUN git config --global user.name "Brock Samson"
 RUN git config --global --add safe.directory '*'
+RUN git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
 
 # SSH setup
 RUN mkdir -p /var/run/sshd && \
@@ -80,6 +81,12 @@ RUN curl -L -o /usr/local/bin/docker-compose \
     "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" && \
     chmod +x /usr/local/bin/docker-compose
 
+# Create non-root user
+RUN useradd -m -s /bin/bash brock && \
+    usermod -aG sudo,docker brock && \
+    echo "brock ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/brock && \
+    chmod 0440 /etc/sudoers.d/brock
+
 # Install GitHub Actions Runner
 RUN mkdir -p /home/runner ${AGENT_TOOLSDIRECTORY}
 WORKDIR /home/runner
@@ -92,8 +99,10 @@ RUN GH_RUNNER_VERSION=${GH_RUNNER_VERSION:-$(curl --silent "https://api.github.c
     && rm -rf /var/lib/apt/lists/*
 
 # Install asdf + Erlang + Elixir
-RUN git clone --depth=1 https://github.com/asdf-vm/asdf.git /root/.asdf --branch v0.10.0
-ENV PATH="/root/.asdf/shims:/root/.asdf/bin:/root/.local/bin:./node_modules/.bin:${PATH}"
+ENV ASDF_DATA_DIR=/opt/asdf
+RUN mkdir -p /opt/asdf
+RUN curl -fsSL https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz | tar xz -C /usr/local/bin asdf
+ENV PATH="/opt/asdf/shims:./node_modules/.bin:${PATH}"
 ENV EDITOR=vi
 ENV KERL_BUILD_DOCS=yes
 
@@ -101,22 +110,22 @@ RUN asdf plugin add erlang && \
     asdf plugin add elixir && \
     asdf install erlang 28.2 && \
     asdf install elixir 1.19-otp-28 && \
-    asdf global erlang 28.2 && \
-    asdf global elixir 1.19-otp-28
+    asdf set --home erlang 28.2 && \
+    asdf set --home elixir 1.19-otp-28
 
 RUN mkdir -p /home/build/ && \
-    ln -s /root/.asdf/installs/elixir/1.19-otp-28/ /home/build/elixir
+    ln -s /opt/asdf/installs/elixir/1.19-otp-28/ /home/build/elixir
 
 RUN mix local.rebar --force && \
     mix local.hex --force
 
 # Install elixir-ls
 RUN mkdir -p /tools/ && \
-    curl -fLO https://github.com/elixir-lsp/elixir-ls/releases/download/v0.22.1/elixir-ls-v0.22.1.zip && \
-    unzip elixir-ls-v0.22.1.zip -d /tools/elixir-ls && \
+    curl -fLO https://github.com/elixir-lsp/elixir-ls/releases/download/v0.30.0/elixir-ls-v0.30.0.zip && \
+    unzip elixir-ls-v0.30.0.zip -d /tools/elixir-ls && \
     chmod +x /tools/elixir-ls/language_server.sh && \
     ln -s /tools/elixir-ls/language_server.sh /usr/bin/elixir-ls && \
-    rm elixir-ls-v0.22.1.zip
+    rm elixir-ls-v0.30.0.zip
 
 # NPM global packages
 RUN npm install -g \
@@ -128,7 +137,25 @@ RUN npm install -g \
     vscode-langservers-extracted \
     @anthropic-ai/claude-code
 
-# pipx packages
+# Chrome dependencies for browser automation
+RUN apt-get update && apt-get install -y \
+       libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+       libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+       libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64 \
+       libxshmfence1 libx11-xcb1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# vibium (browser automation)
+RUN npm install -g vibium
+RUN CHROME_PATH=$(find /root/.cache/vibium -name "chrome" -path "*/chrome-linux64/*" -type f | head -1) && \
+    mv "$CHROME_PATH" "${CHROME_PATH}.real" && \
+    printf '#!/bin/bash\nexec "$(dirname "$0")/chrome.real" --no-sandbox --headless --disable-dev-shm-usage "$@"\n' > "$CHROME_PATH" && \
+    chmod +x "$CHROME_PATH" && \
+    chmod -R a+rX /root/.cache
+
+# pipx packages (shared location so both root and brock can use them)
+ENV PIPX_HOME=/opt/pipx
+ENV PIPX_BIN_DIR=/usr/local/bin
 RUN pipx install pyright && \
     pipx install ruff && \
     pipx install mypy && \
@@ -136,7 +163,11 @@ RUN pipx install pyright && \
     pipx install basedpyright && \
     pipx install git+https://github.com/hauxir/planka-cli.git && \
     pipx install git+https://github.com/hauxir/metabase-cli.git && \
-    pipx install git+https://github.com/hauxir/freescout-cli.git
+    pipx install git+https://github.com/hauxir/freescout-cli.git && \
+    pipx install git+https://github.com/hauxir/beszel-cli.git
+
+# uv (Python package manager)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && mv /root/.local/bin/uv /usr/local/bin/ && mv /root/.local/bin/uvx /usr/local/bin/
 
 # hcloud CLI
 RUN curl -sSLO https://github.com/hetznercloud/cli/releases/latest/download/hcloud-linux-amd64.tar.gz && \
@@ -163,6 +194,23 @@ RUN curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key'
     apt-get update && \
     apt-get install -y clickhouse-client && \
     rm -rf /var/lib/apt/lists/*
+
+# Set up non-root user environment
+RUN cp /root/.tool-versions /home/brock/.tool-versions && \
+    chown brock:brock /home/brock/.tool-versions && \
+    chown -R brock:brock /home/runner && \
+    mkdir -p /home/brock/.cache && \
+    ln -s /root/.cache/vibium /home/brock/.cache/vibium && \
+    chown -h brock:brock /home/brock/.cache /home/brock/.cache/vibium
+
+USER brock
+RUN git config --global user.email "brock@sam.son" && \
+    git config --global user.name "Brock Samson" && \
+    git config --global --add safe.directory '*' && \
+    git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
+RUN mix local.rebar --force && \
+    mix local.hex --force
+USER root
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
