@@ -203,7 +203,7 @@ RUN cp /root/.tool-versions /home/brock/.tool-versions && \
     ln -s /root/.cache/vibium /home/brock/.cache/vibium && \
     chown -h brock:brock /home/brock/.cache /home/brock/.cache/vibium
 
-RUN chmod -R a+w /opt/asdf/installs/elixir/1.19-otp-28/.mix
+RUN chown -R brock:brock /opt/asdf/installs/elixir/1.19-otp-28/.mix
 
 USER brock
 RUN git config --global user.email "brock@sam.son" && \
