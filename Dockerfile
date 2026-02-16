@@ -164,7 +164,8 @@ RUN pipx install pyright && \
     pipx install git+https://github.com/hauxir/planka-cli.git && \
     pipx install git+https://github.com/hauxir/metabase-cli.git && \
     pipx install git+https://github.com/hauxir/freescout-cli.git && \
-    pipx install git+https://github.com/hauxir/beszel-cli.git
+    pipx install git+https://github.com/hauxir/beszel-cli.git && \
+    pipx install git+https://github.com/hauxir/gsc-cli.git
 
 # uv (Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && mv /root/.local/bin/uv /usr/local/bin/ && mv /root/.local/bin/uvx /usr/local/bin/
