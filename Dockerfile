@@ -2,17 +2,7 @@ ARG FROM=ubuntu:24.04
 FROM ${FROM}
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG GH_RUNNER_VERSION
 ARG DOCKER_COMPOSE_VERSION="1.27.4"
-
-ENV RUNNER_NAME=""
-ENV RUNNER_WORK_DIRECTORY="_work"
-ENV RUNNER_TOKEN=""
-ENV RUNNER_REPOSITORY_URL=""
-ENV RUNNER_LABELS=""
-ENV RUNNER_ALLOW_RUNASROOT=true
-ENV GITHUB_ACCESS_TOKEN=""
-ENV AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -43,7 +33,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     software-properties-common \
     sudo \
-    supervisor \
     unzip \
     wget \
     xsltproc \
@@ -69,9 +58,6 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
 
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
-
 # Install Docker
 RUN curl -fsSL https://get.docker.com -o- | sh && \
     rm -rf /var/lib/apt/lists/*
@@ -86,17 +72,6 @@ RUN useradd -m -s /bin/bash brock && \
     usermod -aG sudo,docker brock && \
     echo "brock ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/brock && \
     chmod 0440 /etc/sudoers.d/brock
-
-# Install GitHub Actions Runner
-RUN mkdir -p /home/runner ${AGENT_TOOLSDIRECTORY}
-WORKDIR /home/runner
-RUN GH_RUNNER_VERSION=${GH_RUNNER_VERSION:-$(curl --silent "https://api.github.com/repos/actions/runner/releases/latest" | grep tag_name | sed -E 's/.*"v([^"]+)".*/\1/')} \
-    && curl -L -O https://github.com/actions/runner/releases/download/v${GH_RUNNER_VERSION}/actions-runner-linux-x64-${GH_RUNNER_VERSION}.tar.gz \
-    && tar -zxf actions-runner-linux-x64-${GH_RUNNER_VERSION}.tar.gz \
-    && rm -f actions-runner-linux-x64-${GH_RUNNER_VERSION}.tar.gz \
-    && ./bin/installdependencies.sh \
-    && chown -R root: /home/runner \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install asdf + Erlang + Elixir
 ENV ASDF_DATA_DIR=/opt/asdf
@@ -204,7 +179,6 @@ RUN curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key'
 # Set up non-root user environment
 RUN cp /root/.tool-versions /home/brock/.tool-versions && \
     chown brock:brock /home/brock/.tool-versions && \
-    chown -R brock:brock /home/runner && \
     mkdir -p /home/brock/.cache && \
     ln -s /root/.cache/vibium /home/brock/.cache/vibium && \
     chown -h brock:brock /home/brock/.cache /home/brock/.cache/vibium
@@ -218,9 +192,3 @@ RUN git config --global user.email "brock@sam.son" && \
     git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=${GH_TOKEN}"; }; f'
 RUN mix local.rebar --force && \
     mix local.hex --force
-USER root
-
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/bin/sh", "-c", "/etc/init.d/ssh start && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
