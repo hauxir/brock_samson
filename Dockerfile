@@ -120,13 +120,8 @@ RUN apt-get update && apt-get install -y \
        libxshmfence1 libx11-xcb1 && \
     rm -rf /var/lib/apt/lists/*
 
-# vibium (browser automation)
+# vibium binary (npm package installed globally, Chrome downloaded later as brock)
 RUN npm install -g vibium
-RUN CHROME_PATH=$(find /root/.cache/vibium -name "chrome" -path "*/chrome-linux64/*" -type f | head -1) && \
-    mv "$CHROME_PATH" "${CHROME_PATH}.real" && \
-    printf '#!/bin/bash\nexec "$(dirname "$0")/chrome.real" --no-sandbox --headless --disable-dev-shm-usage "$@"\n' > "$CHROME_PATH" && \
-    chmod +x "$CHROME_PATH" && \
-    chmod -R a+rX /root/.cache
 
 # pipx packages (shared location so both root and brock can use them)
 ENV PIPX_HOME=/opt/pipx
@@ -178,14 +173,19 @@ RUN curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key'
 
 # Set up non-root user environment
 RUN cp /root/.tool-versions /home/brock/.tool-versions && \
-    chown brock:brock /home/brock/.tool-versions && \
-    mkdir -p /home/brock/.cache && \
-    ln -s /root/.cache/vibium /home/brock/.cache/vibium && \
-    chown -h brock:brock /home/brock/.cache /home/brock/.cache/vibium
+    chown brock:brock /home/brock/.tool-versions
 
 RUN chown -R brock:brock /opt/asdf/installs/elixir/1.19-otp-28/.mix
 
 USER brock
+
+# vibium: download Chrome and wrap it for headless container use
+RUN vibium install && \
+    CHROME_PATH=$(find /home/brock/.cache/vibium -name "chrome" -path "*/chrome-linux64/*" -type f | head -1) && \
+    mv "$CHROME_PATH" "${CHROME_PATH}.real" && \
+    printf '#!/bin/bash\nexec "$(dirname "$0")/chrome.real" --no-sandbox --headless --disable-dev-shm-usage "$@"\n' > "$CHROME_PATH" && \
+    chmod +x "$CHROME_PATH"
+
 RUN git config --global user.email "brock@sam.son" && \
     git config --global user.name "Brock Samson" && \
     git config --global --add safe.directory '*' && \
