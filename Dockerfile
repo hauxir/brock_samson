@@ -175,6 +175,11 @@ RUN curl -sSLO https://github.com/hetznercloud/cli/releases/latest/download/hclo
     tar -C /usr/local/bin --no-same-owner -xzf hcloud-linux-amd64.tar.gz hcloud && \
     rm hcloud-linux-amd64.tar.gz
 
+# flarectl (Cloudflare CLI)
+RUN curl -sSLO https://github.com/cloudflare/cloudflare-go/releases/download/v0.116.0/flarectl_0.116.0_linux_amd64.tar.gz && \
+    tar -C /usr/local/bin --no-same-owner -xzf flarectl_0.116.0_linux_amd64.tar.gz flarectl && \
+    rm flarectl_0.116.0_linux_amd64.tar.gz
+
 # AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
