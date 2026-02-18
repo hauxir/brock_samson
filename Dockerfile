@@ -126,7 +126,8 @@ RUN npm install -g vibium
 # pipx packages (shared location so both root and brock can use them)
 ENV PIPX_HOME=/opt/pipx
 ENV PIPX_BIN_DIR=/usr/local/bin
-RUN pipx install pyright && \
+RUN pipx install ansible && \
+    pipx install pyright && \
     pipx install ruff && \
     pipx install mypy && \
     pipx install virtualenv && \
@@ -163,6 +164,10 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
     apt-get update && \
     apt-get install gh -y && \
     rm -rf /var/lib/apt/lists/*
+
+# hadolint (Dockerfile linter)
+RUN curl -sSL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint && \
+    chmod +x /usr/local/bin/hadolint
 
 # ClickHouse client
 RUN curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg && \
