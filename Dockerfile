@@ -78,6 +78,8 @@ ENV ASDF_DATA_DIR=/opt/asdf
 RUN mkdir -p /opt/asdf
 RUN curl -fsSL https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz | tar xz -C /usr/local/bin asdf
 ENV PATH="/opt/asdf/shims:./node_modules/.bin:${PATH}"
+RUN echo 'export ASDF_DATA_DIR=/opt/asdf' >> /etc/profile.d/asdf.sh && \
+    echo 'export PATH="/opt/asdf/shims:$PATH"' >> /etc/profile.d/asdf.sh
 ENV EDITOR=vi
 ENV KERL_BUILD_DOCS=yes
 
