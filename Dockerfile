@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     pipx \
     python3 \
     python3-pip \
+    rsync \
     software-properties-common \
     sudo \
     unzip \
