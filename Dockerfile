@@ -151,6 +151,11 @@ RUN curl -sSLO https://github.com/cloudflare/cloudflare-go/releases/download/v0.
     tar -C /usr/local/bin --no-same-owner -xzf flarectl_0.116.0_linux_amd64.tar.gz flarectl && \
     rm flarectl_0.116.0_linux_amd64.tar.gz
 
+# Terraform
+RUN curl -fsSL https://releases.hashicorp.com/terraform/1.11.2/terraform_1.11.2_linux_amd64.zip -o terraform.zip && \
+    unzip terraform.zip -d /usr/local/bin && \
+    rm terraform.zip
+
 # AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
