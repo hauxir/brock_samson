@@ -128,7 +128,7 @@ RUN npm install -g vibium
 # pipx packages (shared location so both root and brock can use them)
 ENV PIPX_HOME=/opt/pipx
 ENV PIPX_BIN_DIR=/usr/local/bin
-RUN pipx install ansible && \
+RUN pipx install --include-deps ansible && \
     pipx install pyright && \
     pipx install ruff && \
     pipx install mypy && \
