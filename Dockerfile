@@ -196,7 +196,7 @@ USER brock
 RUN vibium install && \
     CHROME_PATH=$(find /home/brock/.cache/vibium -name "chrome" -path "*/chrome-linux64/*" -type f | head -1) && \
     mv "$CHROME_PATH" "${CHROME_PATH}.real" && \
-    printf '#!/bin/bash\nexec "$(dirname "$0")/chrome.real" --no-sandbox --headless --disable-dev-shm-usage "$@"\n' > "$CHROME_PATH" && \
+    printf '#!/bin/bash\nexec "$(dirname "$0")/chrome.real" --no-sandbox --disable-dev-shm-usage "$@"\n' > "$CHROME_PATH" && \
     chmod +x "$CHROME_PATH"
 
 RUN git config --global user.email "brock@sam.son" && \
